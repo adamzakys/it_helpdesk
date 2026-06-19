@@ -1,5 +1,5 @@
-import React from 'react';
-import { User, Mail, Shield, Calendar, Clock, Ticket } from 'lucide-react';
+import React, { useState } from 'react';
+import { User, Mail, Shield, Calendar, Clock, Ticket, KeyRound, Lock } from 'lucide-react';
 
 /**
  * Halaman UserProfile untuk menampilkan informasi akun pengguna yang aktif.
@@ -9,6 +9,51 @@ export default function UserProfile() {
     name: 'Tamu',
     email: 'guest@helpdesk.com',
     role: 'REPORTER',
+  };
+
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState(null);
+  const [errorMsg, setErrorMsg] = useState(null);
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setSuccessMsg(null);
+    setErrorMsg(null);
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setErrorMsg('Sesi telah berakhir. Silakan login kembali.');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ currentPassword, newPassword })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setSuccessMsg(data.message);
+        setCurrentPassword('');
+        setNewPassword('');
+      } else {
+        setErrorMsg(data.message || 'Gagal mengubah kata sandi.');
+      }
+    } catch (err) {
+      console.error(err);
+      setErrorMsg('Gagal menghubungkan ke server.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -97,6 +142,80 @@ export default function UserProfile() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Ubah Kata Sandi Section */}
+          <div className="pt-6 border-t border-slate-850 space-y-4">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <KeyRound size={14} className="text-berlian-500" /> Ubah Kata Sandi Akun
+            </h4>
+
+            {successMsg && (
+              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-400 text-xs font-medium">
+                ✓ {successMsg}
+              </div>
+            )}
+
+            {errorMsg && (
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-xs font-medium">
+                ⚠️ {errorMsg}
+              </div>
+            )}
+
+            <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="block text-[10px] font-bold text-slate-450 uppercase tracking-wider">
+                    Kata Sandi Saat Ini
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-2.5 text-slate-500" size={14} />
+                    <input
+                      type="password"
+                      required
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="••••••••"
+                      disabled={loading}
+                      className="w-full pl-9 pr-3 py-1.5 bg-slate-900/60 border border-slate-850 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-berlian-500 focus:ring-1 focus:ring-berlian-500 placeholder:text-slate-650 disabled:opacity-55 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-[10px] font-bold text-slate-450 uppercase tracking-wider">
+                    Kata Sandi Baru
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-2.5 text-slate-500" size={14} />
+                    <input
+                      type="password"
+                      required
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="••••••••"
+                      disabled={loading}
+                      className="w-full pl-9 pr-3 py-1.5 bg-slate-900/60 border border-slate-850 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-berlian-500 focus:ring-1 focus:ring-berlian-500 placeholder:text-slate-650 disabled:opacity-55 transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-4 py-2 bg-berlian-600 hover:bg-berlian-500 disabled:bg-berlian-850 text-white font-semibold rounded-lg text-xs transition-all active:scale-98 flex items-center gap-2 shadow-lg shadow-berlian-600/10"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Memproses...</span>
+                  </>
+                ) : (
+                  <span>Perbarui Kata Sandi</span>
+                )}
+              </button>
+            </form>
           </div>
         </div>
       </div>
