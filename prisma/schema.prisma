@@ -1,0 +1,204 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ==========================================
+// 1. MASTER DATA MODULE
+// ==========================================
+
+model Department {
+  id            Int      @id @default(autoincrement())
+  name          String   // cth: 'Operasional', 'TIK'
+  location_name String?  // cth: 'Kantor Utama', 'Pos Timbangan JT01'
+  users         User[]
+  assets        Asset[]
+  
+  fromDeptHistories AssetHistory[] @relation("FromDept")
+  toDeptHistories   AssetHistory[] @relation("ToDept")
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model User {
+  id            String      @id @default(uuid())
+  nip           String      @unique
+  full_name     String
+  email         String      @unique // Dipertahankan untuk login portal
+  password      String      // Dipertahankan untuk login portal
+  department_id Int?
+  department    Department? @relation(fields: [department_id], references: [id])
+  role          String      @default("User") // 'User', 'IT Support', 'Admin'
+  is_active     Boolean     @default(true)
+  
+  assets        Asset[]     @relation("UserAssets")
+  reportedTickets Ticket[]  @relation("ReporterTickets")
+  assignedTickets Ticket[]  @relation("AssigneeTickets")
+  worklogs      TicketWorklog[]
+  executedMaintenances MaintenanceLog[] @relation("ExecutedMaintenances")
+  verifiedMaintenances MaintenanceLog[] @relation("VerifiedMaintenances")
+
+  performedHistories AssetHistory[] @relation("PerformedBy")
+  fromUserHistories  AssetHistory[] @relation("FromUser")
+  toUserHistories    AssetHistory[] @relation("ToUser")
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+// ==========================================
+// 2. CMDB & IT ASSET MANAGEMENT
+// ==========================================
+
+model AssetCategory {
+  id            Int      @id @default(autoincrement())
+  category_name String   // 'PC', 'UPS', 'Converter', 'CCTV'
+  description   String?  @db.Text
+  assets        Asset[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Asset {
+  id               String       @id @default(uuid())
+  asset_code       String       @unique // cth: '2PC25', '3UP56'
+  category_id      Int
+  category         AssetCategory @relation(fields: [category_id], references: [id])
+  user_id          String?      // Siapa pemegang terakhir
+  user             User?        @relation("UserAssets", fields: [user_id], references: [id], onDelete: SetNull)
+  department_id    Int?         // Lokasi fisik barang
+  department       Department?  @relation(fields: [department_id], references: [id])
+  status           String       @default("Active") // 'Active', 'Maintenance', 'Broken', 'Spare'
+  
+  // KUNCI DINAMIS: Semua spesifikasi masuk ke sini (RAM, IP, Resolusi, dll)
+  attributes       Json? 
+  
+  purchase_date    DateTime?
+  warranty_expiry  DateTime?
+  
+  parentRelationships AssetRelationship[] @relation("ParentAsset")
+  childRelationships  AssetRelationship[] @relation("ChildAsset")
+  tickets             Ticket[]
+  maintenanceSchedules MaintenanceSchedule[]
+  histories           AssetHistory[]
+
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+}
+
+// Relasi Dependensi Antar Aset (Topologi)
+model AssetRelationship {
+  id                String  @id @default(uuid())
+  parent_asset_id   String  // cth: UPS
+  parentAsset       Asset   @relation("ParentAsset", fields: [parent_asset_id], references: [id], onDelete: Cascade)
+  child_asset_id    String  // cth: PC Timbangan
+  childAsset        Asset   @relation("ChildAsset", fields: [child_asset_id], references: [id], onDelete: Cascade)
+  relationship_type String? // 'Powers', 'Connected_to', 'Controls'
+}
+
+// ==========================================
+// 3. HELPDESK & TICKETING
+// ==========================================
+
+model Ticket {
+  id                  String       @id @default(uuid())
+  ticket_number       String       @unique // 'HD-202606-001'
+  ticket_type         String?      // 'Incident', 'Request', 'Problem'
+  priority            String       @default("Medium") // 'Low', 'Medium', 'High', 'Critical'
+  
+  // Hubungan ke Akun Reporter (Optional jika dia melaporkan via akun terdaftar)
+  reporter_id         String?
+  reporter            User?        @relation("ReporterTickets", fields: [reporter_id], references: [id], onDelete: Restrict)
+  
+  // Field khusus untuk menampung data pelapor Tamu (Guest tanpa login)
+  guest_name          String?
+  guest_email         String?
+  guest_nip           String?
+  guest_division      String?
+
+  asset_id            String?      // Aset apa yang bermasalah?
+  asset               Asset?       @relation(fields: [asset_id], references: [id], onDelete: SetNull)
+  assignee_id         String?      // IT yang handle
+  assignee            User?        @relation("AssigneeTickets", fields: [assignee_id], references: [id], onDelete: SetNull)
+  
+  issue_description   String       @db.Text
+  root_cause_analysis String?      @db.Text
+  resolution_notes    String?      @db.Text
+  
+  status              String       @default("Open") // 'Open', 'In Progress', 'Resolved', 'Closed'
+  
+  reported_at         DateTime     @default(now())
+  started_at          DateTime?
+  resolved_at         DateTime?
+  
+  worklogs            TicketWorklog[]
+}
+
+// Log Pengerjaan Teknisi (Timesheet / Audit Trail)
+model TicketWorklog {
+  id            String   @id @default(uuid())
+  ticket_id     String
+  ticket        Ticket   @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
+  technician_id String
+  technician    User     @relation(fields: [technician_id], references: [id], onDelete: Restrict)
+  log_note      String   @db.Text
+  logged_at     DateTime @default(now())
+}
+
+// ==========================================
+// 4. PREVENTIVE MAINTENANCE
+// ==========================================
+
+model MaintenanceSchedule {
+  id                 String   @id @default(uuid())
+  asset_id           String
+  asset              Asset    @relation(fields: [asset_id], references: [id], onDelete: Cascade)
+  scheduled_date     DateTime
+  
+  // KUNCI DINAMIS: Daftar checklist yang harus dicek beda-beda tiap aset
+  checklist_template Json 
+  
+  logs               MaintenanceLog[]
+}
+
+model MaintenanceLog {
+  id                String              @id @default(uuid())
+  schedule_id       String
+  schedule          MaintenanceSchedule @relation(fields: [schedule_id], references: [id], onDelete: Cascade)
+  executed_by       String
+  executor          User                @relation("ExecutedMaintenances", fields: [executed_by], references: [id], onDelete: Restrict)
+  verified_by       String?
+  verifier          User?               @relation("VerifiedMaintenances", fields: [verified_by], references: [id], onDelete: SetNull)
+  
+  // KUNCI DINAMIS: Hasil checklist dari teknisi lapangan masuk ke sini
+  checklist_results Json 
+  
+  overall_condition String              // 'OK', 'NOT OK'
+  notes             String?             @db.Text
+  executed_at       DateTime            @default(now())
+}
+
+model AssetHistory {
+  id              String      @id @default(uuid())
+  asset_id        String
+  asset           Asset       @relation(fields: [asset_id], references: [id], onDelete: Cascade)
+  action          String      // 'PROCUREMENT', 'MUTATION', 'PART_TRANSFER', 'RETIREMENT', 'STATUS_CHANGE'
+  from_dept_id    Int?
+  from_dept       Department? @relation("FromDept", fields: [from_dept_id], references: [id])
+  to_dept_id      Int?
+  to_dept         Department? @relation("ToDept", fields: [to_dept_id], references: [id])
+  from_user_id    String?
+  from_user       User?       @relation("FromUser", fields: [from_user_id], references: [id])
+  to_user_id      String?
+  to_user         User?       @relation("ToUser", fields: [to_user_id], references: [id])
+  notes           String?     @db.Text
+  performed_by_id String
+  performed_by    User        @relation("PerformedBy", fields: [performed_by_id], references: [id])
+  timestamp       DateTime    @default(now())
+}

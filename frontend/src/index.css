@@ -1,0 +1,160 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Inter', sans-serif;
+    @apply bg-slate-950 text-slate-100 min-h-screen antialiased;
+  }
+}
+
+::selection {
+  background-color: #2596be;
+  color: #ffffff;
+}
+
+/* Custom modern scrollbar for dashboard */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(37, 150, 190, 0.3); /* berlian-500 opacity */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(37, 150, 190, 0.6);
+}
+
+/* Glassmorphism utility */
+.glass-panel {
+  background: rgba(11, 36, 46, 0.45); /* Tinted with deep corporate cyan */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(37, 150, 190, 0.08);
+}
+
+.glass-card {
+  background: rgba(9, 25, 33, 0.5); /* Deep slate-cyan bg */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(37, 150, 190, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(37, 150, 190, 0.35);
+  box-shadow: 0 10px 30px -10px rgba(37, 150, 190, 0.25);
+  transform: translateY(-2px);
+}
+
+/* Light Mode overrides */
+body.light-mode {
+  background-color: #f8fafc !important; /* slate-50 */
+  color: #0f172a !important; /* slate-900 */
+}
+
+body.light-mode ::selection {
+  background-color: #2596be;
+  color: #ffffff;
+}
+
+body.light-mode ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+body.light-mode .glass-panel {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(37, 150, 190, 0.25) !important;
+  color: #0f172a !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .glass-card {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(37, 150, 190, 0.2) !important;
+  color: #0f172a !important;
+  box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .glass-card:hover {
+  border-color: rgba(37, 150, 190, 0.5) !important;
+  box-shadow: 0 10px 30px -10px rgba(37, 150, 190, 0.25) !important;
+}
+
+/* Specific text color conversions in light mode */
+body.light-mode .text-slate-100, body.light-mode .text-white { color: #0f172a !important; }
+body.light-mode .text-slate-200 { color: #1e293b !important; }
+body.light-mode .text-slate-250, body.light-mode .text-slate-350, body.light-mode .text-slate-300 { color: #334155 !important; }
+body.light-mode .text-slate-400 { color: #475569 !important; }
+body.light-mode .text-slate-500 { color: #64748b !important; }
+body.light-mode .text-slate-655, body.light-mode .text-slate-650 { color: #94a3b8 !important; }
+
+body.light-mode input, body.light-mode select, body.light-mode textarea {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important; /* slate-300 */
+  color: #0f172a !important;
+}
+
+body.light-mode input:focus, body.light-mode select:focus, body.light-mode textarea:focus {
+  border-color: #2596be !important;
+  box-shadow: 0 0 0 1px #2596be !important;
+}
+
+body.light-mode table {
+  color: #334155 !important;
+}
+
+body.light-mode tr:hover {
+  background-color: rgba(37, 150, 190, 0.06) !important;
+}
+
+body.light-mode th {
+  background-color: #f1f5f9 !important; /* slate-100 */
+  color: #475569 !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+body.light-mode aside {
+  background-color: #ffffff !important;
+  border-right-color: #e2e8f0 !important; /* slate-200 */
+}
+
+body.light-mode header {
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+body.light-mode .border-slate-800, 
+body.light-mode .border-slate-850, 
+body.light-mode .border-slate-850\/60,
+body.light-mode .border-slate-900 {
+  border-color: #cbd5e1 !important;
+}
+
+body.light-mode .bg-slate-950 {
+  background-color: #f8fafc !important;
+}
+
+body.light-mode .bg-slate-900, 
+body.light-mode .bg-slate-900\/30, 
+body.light-mode .bg-slate-900\/40 {
+  background-color: #ffffff !important;
+}
+
+body.light-mode .bg-slate-950\/80 {
+  background-color: rgba(15, 23, 42, 0.4) !important;
+}
+
+body.light-mode .bg-slate-950\/20 {
+  background-color: rgba(15, 23, 42, 0.05) !important;
+}
