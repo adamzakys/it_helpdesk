@@ -271,7 +271,10 @@ export default function App() {
           >
             <div>
               <div className="flex items-center justify-between pb-4 border-b border-slate-900 mb-6">
-                <span className="font-bold text-sm tracking-wide">IT Portal Menu</span>
+                <div className="flex items-center gap-2">
+                  <img src={logoImg} className="h-7 w-auto object-contain" alt="Logo BMS" />
+                  <span className="font-bold text-xs tracking-tight text-white uppercase">BMS IT Support</span>
+                </div>
                 <button onClick={() => setMobileMenuOpen(false)} className="text-slate-400">
                   <X size={18} />
                 </button>

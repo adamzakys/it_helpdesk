@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Ticket, Send, AlertCircle, CheckCircle, ArrowLeft, Calendar, User, Mail, Shield, ShieldAlert, Sun, Moon } from 'lucide-react';
+import logoImg from '../assets/Logo-Berlian-Manyar-Sejahtera.png';
 
 /**
  * Halaman ReportTicket untuk mengirimkan laporan kendala/tiket baru.
@@ -176,14 +177,16 @@ export default function ReportTicket({ onReportSuccess, isGuestMode = false }) {
       )}
 
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-2">
-          <Ticket className="text-berlian-500" /> 
-          <span>{isGuestMode ? 'Laporan Kendala Lapangan (Tamu Publik)' : 'Buat Laporan Tiket Baru'}</span>
-        </h1>
-        <p className="text-slate-400 text-sm mt-1">
-          Formulir pengaduan kendala IT & operasional PT Berlian Manyar Sejahtera
-        </p>
+      <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
+        <img src={logoImg} className="h-14 w-auto object-contain drop-shadow-[0_0_10px_rgba(37,150,190,0.2)]" alt="Logo BMS" />
+        <div className="text-center sm:text-left">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white flex items-center gap-2">
+            <span>{isGuestMode ? 'Laporan Kendala Lapangan (Tamu)' : 'Buat Laporan Tiket Baru'}</span>
+          </h1>
+          <p className="text-slate-400 text-sm mt-1">
+            Formulir pengaduan kendala IT & operasional PT Berlian Manyar Sejahtera
+          </p>
+        </div>
       </div>
 
       {/* Form Card */}
