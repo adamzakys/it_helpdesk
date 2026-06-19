@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import ReportTicket from './pages/ReportTicket';
 import AssetsList from './pages/AssetsList';
 import UserProfile from './pages/UserProfile';
+import UserManagement from './pages/UserManagement';
 import logoImg from './assets/Logo-Berlian-Manyar-Sejahtera.png';
 import { 
   Settings, 
@@ -13,6 +14,7 @@ import {
   PlusCircle, 
   HardDrive, 
   User, 
+  Users,
   ChevronRight,
   Menu,
   X,
@@ -155,6 +157,8 @@ export default function App() {
         return <AssetsList />;
       case 'profile':
         return <UserProfile />;
+      case 'users':
+        return <UserManagement />;
       default:
         return <ITDashboard />;
     }
@@ -242,6 +246,24 @@ export default function App() {
               </div>
               <ChevronRight size={14} className={activeTab === 'profile' ? 'opacity-100' : 'opacity-0'} />
             </button>
+
+            {/* Manajemen Pengguna (Admin Only) */}
+            {user && user.role === 'Admin' && (
+              <button
+                onClick={() => { setActiveTab('users'); setMobileMenuOpen(false); }}
+                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-xs font-semibold tracking-wide transition-all ${
+                  activeTab === 'users' 
+                    ? 'bg-berlian-600 text-white shadow-lg shadow-berlian-600/15' 
+                    : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Users size={16} />
+                  <span>Manajemen Pengguna</span>
+                </div>
+                <ChevronRight size={14} className={activeTab === 'users' ? 'opacity-100' : 'opacity-0'} />
+              </button>
+            )}
           </nav>
         </div>
 
@@ -308,6 +330,16 @@ export default function App() {
                   <User size={16} />
                   <span>Profil Saya</span>
                 </button>
+
+                {user && user.role === 'Admin' && (
+                  <button
+                    onClick={() => { setActiveTab('users'); setMobileMenuOpen(false); }}
+                    className={`w-full flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-xs font-semibold ${activeTab === 'users' ? 'bg-berlian-600 text-white' : 'text-slate-400'}`}
+                  >
+                    <Users size={16} />
+                    <span>Manajemen Pengguna</span>
+                  </button>
+                )}
               </nav>
             </div>
             <div className="pt-4 border-t border-slate-900">
