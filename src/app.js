@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const ticketRoutes = require('./routes/ticketRoutes');
 const authRoutes = require('./routes/authRoutes');
 const assetRoutes = require('./routes/assetRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 // Load environment variables dari file .env
 dotenv.config();
@@ -35,6 +36,9 @@ app.use('/api/tickets', ticketRoutes);
 
 // Registrasi Route untuk Entitas Asset
 app.use('/api/assets', assetRoutes);
+
+// Registrasi Route untuk User Management CRUD
+app.use('/api/users-management', userRoutes);
 
 const prisma = require('./config/database');
 const { verifyToken } = require('./middleware/authMiddleware');

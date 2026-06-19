@@ -28,6 +28,10 @@ export default function ITDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState('table'); // 'table' | 'grid'
   
+  // State untuk Date Filter (Asia/Jakarta timezone on query)
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
   // State untuk Detail Modal
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
@@ -38,8 +42,16 @@ export default function ITDashboard() {
     setError(null);
     try {
       const token = localStorage.getItem('token');
+      
+      // Susun query parameter dinamis untuk rentang tanggal
+      const queryParams = new URLSearchParams();
+      if (startDate) queryParams.append('startDate', startDate);
+      if (endDate) queryParams.append('endDate', endDate);
+      
+      const queryStr = queryParams.toString() ? `?${queryParams.toString()}` : '';
+      
       // Endpoint ter-proxy otomatis melalui vite.config.js ke http://localhost:3000
-      const response = await fetch('/api/tickets', {
+      const response = await fetch(`/api/tickets${queryStr}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -65,10 +77,10 @@ export default function ITDashboard() {
     }
   };
 
-  // Panggil fetchTickets saat komponen pertama kali dirender
+  // Panggil fetchTickets saat komponen pertama kali dirender atau filter tanggal berubah
   useEffect(() => {
     fetchTickets();
-  }, []);
+  }, [startDate, endDate]);
 
   // Ambil detail lengkap tiket (termasuk logs) untuk dibuka di modal
   const handleOpenTicket = async (ticketId) => {
@@ -261,9 +273,9 @@ export default function ITDashboard() {
       </div>
 
       {/* Control Panel: Filters, Search, and Toggle View */}
-      <div className="glass-panel rounded-xl p-4 border border-slate-800 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div className="glass-panel rounded-xl p-4 border border-slate-800 mb-6 flex flex-col lg:flex-row justify-between items-center gap-4">
         {/* Filter Status */}
-        <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
+        <div className="flex items-center gap-2 overflow-x-auto w-full lg:w-auto pb-2 lg:pb-0">
           <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold uppercase pr-2 border-r border-slate-850 shrink-0">
             <ListFilter size={14} />
             <span>Filter Status:</span>
@@ -285,8 +297,39 @@ export default function ITDashboard() {
           </div>
         </div>
 
+        {/* Date Filter */}
+        <div className="flex items-center gap-2 overflow-x-auto w-full lg:w-auto pb-2 lg:pb-0">
+          <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold uppercase pr-2 border-r border-slate-850 shrink-0">
+            <Clock size={14} className="text-berlian-500" />
+            <span>Filter Tanggal:</span>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="px-2.5 py-1 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-berlian-500"
+            />
+            <span className="text-xs text-slate-500 font-medium">s/d</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="px-2.5 py-1 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-berlian-500"
+            />
+            {(startDate || endDate) && (
+              <button 
+                onClick={() => { setStartDate(''); setEndDate(''); }}
+                className="text-[10px] text-red-400 hover:text-red-300 font-semibold ml-1 shrink-0"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Search & Layout Toggle */}
-        <div className="flex items-center justify-between md:justify-end gap-3 w-full md:w-auto shrink-0">
+        <div className="flex items-center justify-between lg:justify-end gap-3 w-full lg:w-auto shrink-0">
           {/* Search Box */}
           <div className="relative w-full md:w-64">
             <Search className="absolute left-3 top-2.5 text-slate-500" size={16} />

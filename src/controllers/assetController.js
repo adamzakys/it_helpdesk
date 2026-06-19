@@ -309,6 +309,13 @@ const transferComponent = async (req, res) => {
         });
       }
 
+      // Update component child asset status based on parent connection
+      const componentStatus = new_parent_asset_id ? 'Active' : 'Spare';
+      await tx.asset.update({
+        where: { id: component_asset_id },
+        data: { status: componentStatus }
+      });
+
       // 3. Catat audit log di komponen
       await tx.assetHistory.create({
         data: {
@@ -387,6 +394,38 @@ const retireAsset = async (req, res) => {
     }
 
     const retiredAsset = await prisma.$transaction(async (tx) => {
+      // 0. Periksa AssetRelationship jika memiliki perangkat anak
+      const childRelations = await tx.assetRelationship.findMany({
+        where: { parent_asset_id: id }
+      });
+
+      if (childRelations.length > 0) {
+        const childAssetIds = childRelations.map(rel => rel.child_asset_id);
+
+        // Putus hubungan topologi (hapus relasi)
+        await tx.assetRelationship.deleteMany({
+          where: { parent_asset_id: id }
+        });
+
+        // Kembalikan status seluruh perangkat anak tersebut menjadi 'Spare'
+        await tx.asset.updateMany({
+          where: { id: { in: childAssetIds } },
+          data: { status: 'Spare' }
+        });
+
+        // Catat histori perubahan status untuk masing-masing anak
+        for (const childId of childAssetIds) {
+          await tx.assetHistory.create({
+            data: {
+              asset_id: childId,
+              action: 'STATUS_CHANGE',
+              notes: `Dilepas dari perangkat induk (${asset.asset_code}) yang dimusnahkan (Scrapped). Komponen dikembalikan ke gudang (status: Spare).`,
+              performed_by_id,
+            }
+          });
+        }
+      }
+
       // 1. Catat log pemusnahan
       await tx.assetHistory.create({
         data: {

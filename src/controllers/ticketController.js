@@ -1,4 +1,5 @@
 const prisma = require('../config/database');
+const notificationEmitter = require('../services/notificationService');
 
 // Helper to map DB model Ticket to frontend-expected Ticket structure (with category & asset fields)
 const mapTicket = (ticket) => {
@@ -137,6 +138,9 @@ const createTicket = async (req, res) => {
       }
     });
 
+    // Emit event ticketCreated
+    notificationEmitter.emit('ticketCreated', mapTicket(ticket));
+
     return res.status(201).json({
       success: true,
       message: `Tiket berhasil dibuat dengan Nomor Antrean: ${ticket_number}`,
@@ -155,8 +159,23 @@ const createTicket = async (req, res) => {
 
 // 2. READ All Tickets (Mendukung pemuatan relasi relasional skema baru)
 const getAllTickets = async (req, res) => {
+  const { startDate, endDate } = req.query;
+
   try {
+    const where = {};
+
+    if (startDate || endDate) {
+      where.reported_at = {};
+      if (startDate) {
+        where.reported_at.gte = new Date(`${startDate}T00:00:00+07:00`);
+      }
+      if (endDate) {
+        where.reported_at.lte = new Date(`${endDate}T23:59:59.999+07:00`);
+      }
+    }
+
     const tickets = await prisma.ticket.findMany({
+      where,
       include: {
         reporter: {
           select: { id: true, full_name: true, nip: true, role: true, email: true }
@@ -368,6 +387,17 @@ const updateTicket = async (req, res) => {
         }
       }
     });
+
+    // Emit event statusChanged if status changed
+    if (isStatusChanged) {
+      notificationEmitter.emit('statusChanged', {
+        ticket: mapTicket(fullUpdatedTicket),
+        oldStatus: existingTicket.status,
+        newStatus: status,
+        changedBy,
+        logNote: log_note
+      });
+    }
 
     return res.status(200).json({
       success: true,
