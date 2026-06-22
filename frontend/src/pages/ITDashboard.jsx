@@ -32,6 +32,10 @@ export default function ITDashboard() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
+  // State untuk Paginasi Tiket
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
+
   // State untuk Detail Modal
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
@@ -165,6 +169,19 @@ export default function ITDashboard() {
       return matchesStatus && matchesSearch;
     });
   }, [tickets, filterStatus, searchTerm]);
+
+  // Reset page ke 1 ketika filter berubah
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, filterStatus, startDate, endDate]);
+
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredTickets.length / itemsPerPage);
+  }, [filteredTickets]);
+
+  const paginatedTickets = useMemo(() => {
+    return filteredTickets.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+  }, [filteredTickets, page]);
 
   // Handler warna untuk status di tabel
   const getStatusBadge = (status) => {
@@ -393,10 +410,10 @@ export default function ITDashboard() {
       ) : viewMode === 'table' ? (
         /* TABLE VIEW */
         <div className="glass-panel rounded-xl border border-slate-800 overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-[450px] overflow-y-auto">
             <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-900/80 border-b border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <thead className="sticky top-0 bg-slate-950/95 backdrop-blur-md z-10 border-b border-slate-800">
+                <tr className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   <th className="py-4 px-6">ID Tiket</th>
                   <th className="py-4 px-4">Kategori</th>
                   <th className="py-4 px-4">Prioritas</th>
@@ -407,7 +424,7 @@ export default function ITDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-850/60 text-xs">
-                {filteredTickets.map((ticket) => (
+                {paginatedTickets.map((ticket) => (
                   <tr 
                     key={ticket.id} 
                     onClick={() => handleOpenTicket(ticket.id)}
@@ -453,7 +470,7 @@ export default function ITDashboard() {
             </table>
           </div>
           <div className="bg-slate-900/40 px-6 py-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-500">
-            <span>Menampilkan <strong>{filteredTickets.length}</strong> dari <strong>{tickets.length}</strong> total tiket</span>
+            <span>Menampilkan <strong>{paginatedTickets.length}</strong> dari <strong>{filteredTickets.length}</strong> tiket tersaring</span>
             <span>IT Support System v1.0</span>
           </div>
         </div>
@@ -461,7 +478,7 @@ export default function ITDashboard() {
         /* GRID VIEW (TICKET CARD) */
         <div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTickets.map((ticket) => (
+            {paginatedTickets.map((ticket) => (
               <TicketCard 
                 key={ticket.id} 
                 ticket={ticket} 
@@ -470,7 +487,32 @@ export default function ITDashboard() {
             ))}
           </div>
           <div className="mt-6 text-center text-xs text-slate-500">
-            Menampilkan <strong>{filteredTickets.length}</strong> tiket dari total <strong>{tickets.length}</strong> tiket.
+            Menampilkan <strong>{paginatedTickets.length}</strong> tiket dari total <strong>{filteredTickets.length}</strong> tiket tersaring.
+          </div>
+        </div>
+      )}
+
+      {/* Paginasi Tiket */}
+      {!loading && totalPages > 1 && (
+        <div className="flex justify-between items-center bg-slate-950/20 p-4 border border-slate-900 rounded-xl mt-4">
+          <span className="text-[11px] text-slate-500 font-semibold uppercase">
+            Halaman {page} dari {totalPages}
+          </span>
+          <div className="flex gap-2">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage(p => Math.max(p - 1, 1))}
+              className="px-3 py-1.5 bg-slate-900 border border-slate-850 hover:border-berlian-500/45 disabled:opacity-40 text-slate-350 hover:text-white rounded-lg text-[11px] font-bold transition-all"
+            >
+              ◀ Sebelumnya
+            </button>
+            <button
+              disabled={page === totalPages}
+              onClick={() => setPage(p => Math.min(p + 1, totalPages))}
+              className="px-3 py-1.5 bg-slate-900 border border-slate-850 hover:border-berlian-500/45 disabled:opacity-40 text-slate-350 hover:text-white rounded-lg text-[11px] font-bold transition-all"
+            >
+              Berikutnya ▶
+            </button>
           </div>
         </div>
       )}

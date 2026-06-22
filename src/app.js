@@ -4,6 +4,7 @@ const ticketRoutes = require('./routes/ticketRoutes');
 const authRoutes = require('./routes/authRoutes');
 const assetRoutes = require('./routes/assetRoutes');
 const userRoutes = require('./routes/userRoutes');
+const masterRoutes = require('./routes/masterRoutes');
 
 // Load environment variables dari file .env
 dotenv.config();
@@ -40,8 +41,23 @@ app.use('/api/assets', assetRoutes);
 // Registrasi Route untuk User Management CRUD
 app.use('/api/users-management', userRoutes);
 
+// Registrasi Route untuk Manajemen Data Master
+app.use('/api/master', masterRoutes);
+
 const prisma = require('./config/database');
 const { verifyToken } = require('./middleware/authMiddleware');
+
+// Endpoint publik pendukung dropdown divisi tamu (tidak memerlukan autentikasi)
+app.get('/api/public/departments', async (req, res) => {
+  try {
+    const depts = await prisma.department.findMany({
+      orderBy: { name: 'asc' }
+    });
+    res.status(200).json({ success: true, data: depts });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Gagal mengambil data departemen.', error: error.message });
+  }
+});
 
 // Endpoint pendukung dropdown departemen
 app.get('/api/departments', verifyToken, async (req, res) => {

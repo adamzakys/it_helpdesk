@@ -32,6 +32,21 @@ const verifyToken = (req, res, next) => {
   }
 };
 
+/**
+ * Middleware untuk memastikan bahwa user memiliki peran 'Admin'
+ */
+const verifyAdmin = (req, res, next) => {
+  if (req.user && req.user.role === 'Admin') {
+    next();
+  } else {
+    return res.status(403).json({
+      success: false,
+      message: 'Akses ditolak. Hanya Administrator yang memiliki wewenang untuk aksi ini.',
+    });
+  }
+};
+
 module.exports = {
   verifyToken,
+  verifyAdmin,
 };

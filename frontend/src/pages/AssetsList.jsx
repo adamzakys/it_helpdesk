@@ -37,6 +37,10 @@ export default function AssetsList() {
   // Navigation tabs: 'list' | 'spare_pool' | 'topology'
   const [activeTab, setActiveTab] = useState('list');
 
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 9;
+
   // Modal states
   const [showProcureModal, setShowProcureModal] = useState(false);
   const [showMutateModal, setShowMutateModal] = useState(false);
@@ -140,6 +144,11 @@ export default function AssetsList() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Reset page to 1 on filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, filterCategory, filterStatus, activeTab]);
 
   // Fetch specific asset history logs
   const handleOpenHistory = async (asset) => {
@@ -373,6 +382,9 @@ export default function AssetsList() {
     });
   }, [assets, searchTerm, filterCategory, filterStatus]);
 
+  const totalPages = Math.ceil(filteredAssets.length / itemsPerPage);
+  const paginatedAssets = filteredAssets.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+
   // Extract unique category names
   const categoryNames = useMemo(() => {
     const names = new Set(assets.map(a => a.category).filter(Boolean));
@@ -525,99 +537,128 @@ export default function AssetsList() {
               <p className="text-slate-500 text-sm">Tidak ada data aset IT yang sesuai dengan pencarian Anda.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredAssets.map((asset) => (
-                <div key={asset.id} className="glass-card rounded-xl p-5 border relative overflow-hidden flex flex-col justify-between">
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-berlian-500/5 rounded-full blur-xl pointer-events-none"></div>
-                  
-                  <div>
-                    {/* Header */}
-                    <div className="flex justify-between items-start gap-4 mb-3">
-                      <h3 className="font-bold text-slate-200 text-sm truncate" title={asset.asset_name}>
-                        {asset.asset_name}
-                      </h3>
-                      {getStatusBadge(asset.status)}
-                    </div>
-                    
-                    {/* Detail Informasi */}
-                    <div className="text-[11px] text-slate-400 space-y-1.5 mt-4">
-                      <div className="flex justify-between">
-                        <span>Kode Aset:</span>
-                        <strong className="text-slate-300 font-mono select-all">{asset.asset_code}</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Penanggung Jawab:</span>
-                        <strong className="text-slate-300 truncate max-w-[150px]">{asset.user?.full_name || 'Gudang IT (Spare)'}</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Lokasi Fisik:</span>
-                        <strong className="text-slate-300 truncate max-w-[150px]">{asset.location || 'Gudang IT'}</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Garansi Hingga:</span>
-                        <strong className="text-slate-300">
-                          {asset.warranty_expiry 
-                            ? new Date(asset.warranty_expiry).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: '2-digit' }) 
-                            : 'Tanpa Garansi'}
-                        </strong>
-                      </div>
-                    </div>
+            <div>
+              <div className="max-h-[550px] overflow-y-auto pr-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {paginatedAssets.map((asset) => (
+                    <div key={asset.id} className="glass-card rounded-xl p-5 border relative overflow-hidden flex flex-col justify-between">
+                      <div className="absolute top-0 right-0 w-20 h-20 bg-berlian-500/5 rounded-full blur-xl pointer-events-none"></div>
+                      
+                      <div>
+                        {/* Header */}
+                        <div className="flex justify-between items-start gap-4 mb-3">
+                          <h3 className="font-bold text-slate-200 text-sm truncate" title={asset.asset_name}>
+                            {asset.asset_name}
+                          </h3>
+                          {getStatusBadge(asset.status)}
+                        </div>
+                        
+                        {/* Detail Informasi */}
+                        <div className="text-[11px] text-slate-400 space-y-1.5 mt-4">
+                          <div className="flex justify-between">
+                            <span>Kode Aset:</span>
+                            <strong className="text-slate-300 font-mono select-all">{asset.asset_code}</strong>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Penanggung Jawab:</span>
+                            <strong className="text-slate-300 truncate max-w-[150px]">{asset.user?.full_name || 'Gudang IT (Spare)'}</strong>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Lokasi Fisik:</span>
+                            <strong className="text-slate-300 truncate max-w-[150px]">{asset.location || 'Gudang IT'}</strong>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Garansi Hingga:</span>
+                            <strong className="text-slate-300">
+                              {asset.warranty_expiry 
+                                ? new Date(asset.warranty_expiry).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: '2-digit' }) 
+                                : 'Tanpa Garansi'}
+                            </strong>
+                          </div>
+                        </div>
 
-                    {/* Attributes JSON values */}
-                    {asset.attributes && Object.keys(asset.attributes).length > 0 && (
-                      <div className="mt-4 pt-3 border-t border-slate-850/60 text-[10px] space-y-1">
-                        <span className="text-slate-500 font-semibold block uppercase tracking-wider text-[9px] mb-1">Spesifikasi Detail</span>
-                        {Object.entries(asset.attributes).map(([key, val]) => {
-                          if (!val || typeof val === 'object') return null;
-                          return (
-                            <div key={key} className="flex justify-between font-mono">
-                              <span className="text-slate-500 capitalize">{key.replace('_', ' ')}:</span>
-                              <span className="text-slate-400 truncate max-w-[170px]">{String(val)}</span>
-                            </div>
-                          );
-                        })}
+                        {/* Attributes JSON values */}
+                        {asset.attributes && Object.keys(asset.attributes).length > 0 && (
+                          <div className="mt-4 pt-3 border-t border-slate-850/60 text-[10px] space-y-1">
+                            <span className="text-slate-500 font-semibold block uppercase tracking-wider text-[9px] mb-1">Spesifikasi Detail</span>
+                            {Object.entries(asset.attributes).map(([key, val]) => {
+                              if (!val || typeof val === 'object') return null;
+                              return (
+                                <div key={key} className="flex justify-between font-mono">
+                                  <span className="text-slate-500 capitalize">{key.replace('_', ' ')}:</span>
+                                  <span className="text-slate-400 truncate max-w-[170px]">{String(val)}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
 
-                  {/* Actions bar */}
-                  <div className="pt-4 border-t border-slate-850 mt-5 flex items-center justify-between text-xs">
-                    {/* View history */}
+                      {/* Actions bar */}
+                      <div className="pt-4 border-t border-slate-850 mt-5 flex items-center justify-between text-xs">
+                        {/* View history */}
+                        <button
+                          onClick={() => handleOpenHistory(asset)}
+                          className="flex items-center gap-1 text-slate-400 hover:text-berlian-400 transition-colors"
+                          title="Riwayat Audit Pergerakan"
+                        >
+                          <History size={14} />
+                          <span>Riwayat</span>
+                        </button>
+
+                        {/* Mutasi / Scrap if not scrapped */}
+                        {asset.status !== 'Scrapped' ? (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => { setSelectedAsset(asset); setShowMutateModal(true); }}
+                              className="flex items-center gap-1 bg-berlian-600/10 border border-berlian-500/20 text-berlian-400 hover:bg-berlian-600/25 px-2.5 py-1 rounded transition-colors"
+                              title="Mutasi Lokasi & Custodian"
+                            >
+                              <Move size={12} />
+                              <span>Mutasi</span>
+                            </button>
+                            <button
+                              onClick={() => { setSelectedAsset(asset); setShowRetireModal(true); }}
+                              className="flex items-center gap-1 bg-red-950/20 border border-red-900/30 text-red-400 hover:bg-red-900/20 px-2.5 py-1 rounded transition-colors"
+                              title="Musnahkan Aset (Scrap)"
+                            >
+                              <Trash2 size={12} />
+                              <span>Scrap</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-slate-500 italic text-[10px]">Aset Telah Dimusnahkan</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Paginasi Aset */}
+              {totalPages > 1 && (
+                <div className="flex justify-between items-center bg-slate-950/20 p-4 border border-slate-900 rounded-xl mt-6">
+                  <span className="text-[11px] text-slate-500 font-semibold uppercase">
+                    Halaman {page} dari {totalPages}
+                  </span>
+                  <div className="flex gap-2">
                     <button
-                      onClick={() => handleOpenHistory(asset)}
-                      className="flex items-center gap-1 text-slate-400 hover:text-berlian-400 transition-colors"
-                      title="Riwayat Audit Pergerakan"
+                      disabled={page === 1}
+                      onClick={() => setPage(p => Math.max(p - 1, 1))}
+                      className="px-3 py-1.5 bg-slate-900 border border-slate-850 hover:border-berlian-500/45 disabled:opacity-40 text-slate-350 hover:text-white rounded-lg text-[11px] font-bold transition-all"
                     >
-                      <History size={14} />
-                      <span>Riwayat</span>
+                      ◀ Sebelumnya
                     </button>
-
-                    {/* Mutasi / Scrap if not scrapped */}
-                    {asset.status !== 'Scrapped' ? (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => { setSelectedAsset(asset); setShowMutateModal(true); }}
-                          className="flex items-center gap-1 bg-berlian-600/10 border border-berlian-500/20 text-berlian-400 hover:bg-berlian-600/25 px-2.5 py-1 rounded transition-colors"
-                          title="Mutasi Lokasi & Custodian"
-                        >
-                          <Move size={12} />
-                          <span>Mutasi</span>
-                        </button>
-                        <button
-                          onClick={() => { setSelectedAsset(asset); setShowRetireModal(true); }}
-                          className="flex items-center gap-1 bg-red-950/20 border border-red-900/30 text-red-400 hover:bg-red-900/20 px-2.5 py-1 rounded transition-colors"
-                          title="Musnahkan Aset (Scrap)"
-                        >
-                          <Trash2 size={12} />
-                          <span>Scrap</span>
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="text-slate-500 italic text-[10px]">Aset Telah Dimusnahkan</span>
-                    )}
+                    <button
+                      disabled={page === totalPages}
+                      onClick={() => setPage(p => Math.min(p + 1, totalPages))}
+                      className="px-3 py-1.5 bg-slate-900 border border-slate-850 hover:border-berlian-500/45 disabled:opacity-40 text-slate-350 hover:text-white rounded-lg text-[11px] font-bold transition-all"
+                    >
+                      Berikutnya ▶
+                    </button>
                   </div>
                 </div>
-              ))}
+              )}
             </div>
           )}
         </>

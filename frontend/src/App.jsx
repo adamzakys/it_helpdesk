@@ -5,6 +5,7 @@ import ReportTicket from './pages/ReportTicket';
 import AssetsList from './pages/AssetsList';
 import UserProfile from './pages/UserProfile';
 import UserManagement from './pages/UserManagement';
+import MasterData from './pages/MasterData';
 import logoImg from './assets/Logo-Berlian-Manyar-Sejahtera.png';
 import { 
   Settings, 
@@ -159,6 +160,8 @@ export default function App() {
         return <UserProfile />;
       case 'users':
         return <UserManagement />;
+      case 'master':
+        return <MasterData />;
       default:
         return <ITDashboard />;
     }
@@ -264,6 +267,24 @@ export default function App() {
                 <ChevronRight size={14} className={activeTab === 'users' ? 'opacity-100' : 'opacity-0'} />
               </button>
             )}
+
+            {/* Manajemen Data Master (Admin Only) */}
+            {user && user.role === 'Admin' && (
+              <button
+                onClick={() => { setActiveTab('master'); setMobileMenuOpen(false); }}
+                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-xs font-semibold tracking-wide transition-all ${
+                  activeTab === 'master' 
+                    ? 'bg-berlian-600 text-white shadow-lg shadow-berlian-600/15' 
+                    : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Settings size={16} />
+                  <span>Data Master</span>
+                </div>
+                <ChevronRight size={14} className={activeTab === 'master' ? 'opacity-100' : 'opacity-0'} />
+              </button>
+            )}
           </nav>
         </div>
 
@@ -338,6 +359,16 @@ export default function App() {
                   >
                     <Users size={16} />
                     <span>Manajemen Pengguna</span>
+                  </button>
+                )}
+
+                {user && user.role === 'Admin' && (
+                  <button
+                    onClick={() => { setActiveTab('master'); setMobileMenuOpen(false); }}
+                    className={`w-full flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-xs font-semibold ${activeTab === 'master' ? 'bg-berlian-600 text-white' : 'text-slate-400'}`}
+                  >
+                    <Settings size={16} />
+                    <span>Data Master</span>
                   </button>
                 )}
               </nav>

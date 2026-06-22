@@ -29,11 +29,11 @@ export default function ReportTicket({ onReportSuccess, isGuestMode = false }) {
   // 2. Nama (Wajib diisi)
   const [guestName, setGuestName] = useState(isGuestMode ? '' : (activeUser?.name || ''));
   
-  // 3. Email (Wajib diisi)
+  // 3. Email (Opsional jika Tamu)
   const [guestEmail, setGuestEmail] = useState(isGuestMode ? '' : (activeUser?.email || ''));
   
-  // 4. Divisi (Wajib diisi)
-  const [guestDivision, setGuestDivision] = useState(isGuestMode ? '' : (activeUser?.department || ''));
+  // 4. Divisi (Dropdown dari DB)
+  const [guestDivision, setGuestDivision] = useState('');
   
   // 5. Kebutuhan dukungan (Wajib diisi)
   const [ticketType, setTicketType] = useState('Incident');
@@ -45,12 +45,13 @@ export default function ReportTicket({ onReportSuccess, isGuestMode = false }) {
   const [confirmReport, setConfirmReport] = useState(false);
 
   const [assets, setAssets] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [assetId, setAssetId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
-  // Fetch daftar aset (hanya jika user terautentikasi / opsional fallback)
+  // Fetch daftar aset & departemen/divisi
   useEffect(() => {
     const fetchAssets = async () => {
       try {
@@ -69,16 +70,39 @@ export default function ReportTicket({ onReportSuccess, isGuestMode = false }) {
       }
     };
 
+    const fetchDepts = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const url = isGuestMode ? '/api/public/departments' : '/api/departments';
+        const headers = {};
+        if (token && !isGuestMode) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        const response = await fetch(url, { headers });
+        const result = await response.json();
+        if (response.ok && result.success) {
+          setDepartments(result.data);
+          // Set default value if logged in user has department
+          if (!isGuestMode && activeUser?.department) {
+            setGuestDivision(activeUser.department);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching departments for dropdown:', err);
+      }
+    };
+
     fetchAssets();
-  }, []);
+    fetchDepts();
+  }, [isGuestMode]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validasi 7 Field Wajib
+    // Validasi Field Wajib
     if (!reportedAt) return setError('Tanggal wajib diisi.');
     if (!guestName) return setError('Nama wajib diisi.');
-    if (!guestEmail) return setError('Email wajib diisi.');
+    if (!isGuestMode && !guestEmail) return setError('Email wajib diisi.');
     if (!guestDivision) return setError('Divisi wajib diisi.');
     if (!ticketType) return setError('Kebutuhan dukungan wajib diisi.');
     if (!description) return setError('Deskripsi kendala/kebutuhan wajib diisi.');
@@ -242,11 +266,11 @@ export default function ReportTicket({ onReportSuccess, isGuestMode = false }) {
             {/* 3. Email */}
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Mail size={14} className="text-berlian-400" /> Alamat Email *
+                <Mail size={14} className="text-berlian-400" /> Alamat Email {isGuestMode ? '(Opsional)' : '*'}
               </label>
               <input
                 type="email"
-                required
+                required={!isGuestMode}
                 placeholder="email@bms.co.id / email pribadi"
                 value={guestEmail}
                 onChange={(e) => setGuestEmail(e.target.value)}
@@ -260,15 +284,18 @@ export default function ReportTicket({ onReportSuccess, isGuestMode = false }) {
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Shield size={14} className="text-berlian-400" /> Divisi / Departemen Kerja *
               </label>
-              <input
-                type="text"
+              <select
                 required
-                placeholder="cth: Operasional Timbangan, Keuangan, Logistik"
                 value={guestDivision}
                 onChange={(e) => setGuestDivision(e.target.value)}
                 disabled={loading}
                 className="w-full px-4 py-2 bg-slate-900 border border-slate-850 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-berlian-500 focus:ring-1 focus:ring-berlian-500 disabled:opacity-50"
-              />
+              >
+                <option value="">-- Pilih Divisi / Departemen --</option>
+                {departments.map((dept) => (
+                  <option key={dept.id} value={dept.name}>{dept.name}</option>
+                ))}
+              </select>
             </div>
           </div>
 

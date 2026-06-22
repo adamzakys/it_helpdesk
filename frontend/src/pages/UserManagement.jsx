@@ -12,6 +12,10 @@ export default function UserManagement() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
+
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -71,6 +75,9 @@ export default function UserManagement() {
     u.nip.toLowerCase().includes(searchQuery.toLowerCase()) ||
     u.role.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const paginatedUsers = filteredUsers.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
   // Reset form states
   const resetForm = () => {
@@ -261,7 +268,7 @@ export default function UserManagement() {
             type="text"
             placeholder="Cari nama, NIP, email, role..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
             className="w-full pl-10 pr-4 py-2 bg-slate-900/60 border border-slate-850 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-berlian-500 focus:ring-1 focus:ring-berlian-500 placeholder:text-slate-650 transition-all"
           />
         </div>
@@ -282,10 +289,10 @@ export default function UserManagement() {
             Tidak ada pengguna yang cocok dengan kriteria pencarian Anda.
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-[450px] overflow-y-auto">
             <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-900/80 bg-slate-950/20 text-[10px] uppercase font-bold text-slate-450 tracking-wider">
+              <thead className="sticky top-0 bg-slate-950/90 backdrop-blur-md z-10 border-b border-slate-900">
+                <tr className="text-[10px] uppercase font-bold text-slate-450 tracking-wider">
                   <th className="px-6 py-3.5">Karyawan</th>
                   <th className="px-6 py-3.5">NIP & Email</th>
                   <th className="px-6 py-3.5">Hak Akses / Role</th>
@@ -295,7 +302,7 @@ export default function UserManagement() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-900/40 text-xs">
-                {filteredUsers.map((item) => (
+                {paginatedUsers.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-900/10 transition-colors text-slate-300">
                     {/* Kolom Karyawan */}
                     <td className="px-6 py-4">
@@ -380,6 +387,31 @@ export default function UserManagement() {
           </div>
         )}
       </div>
+
+      {/* Paginasi User */}
+      {!loading && totalPages > 1 && (
+        <div className="flex justify-between items-center bg-slate-950/20 p-4 border border-slate-900 rounded-xl mt-4">
+          <span className="text-[11px] text-slate-500 font-semibold uppercase">
+            Halaman {page} dari {totalPages}
+          </span>
+          <div className="flex gap-2">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage(p => Math.max(p - 1, 1))}
+              className="px-3 py-1.5 bg-slate-900 border border-slate-850 hover:border-berlian-500/45 disabled:opacity-40 text-slate-350 hover:text-white rounded-lg text-[11px] font-bold transition-all"
+            >
+              ◀ Sebelumnya
+            </button>
+            <button
+              disabled={page === totalPages}
+              onClick={() => setPage(p => Math.min(p + 1, totalPages))}
+              className="px-3 py-1.5 bg-slate-900 border border-slate-850 hover:border-berlian-500/45 disabled:opacity-40 text-slate-350 hover:text-white rounded-lg text-[11px] font-bold transition-all"
+            >
+              Berikutnya ▶
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ========================================== */}
       {/* MODAL: TAMBAH USER BARU                    */}
